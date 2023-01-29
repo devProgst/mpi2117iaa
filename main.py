@@ -4,7 +4,7 @@ import time
 import sys
 
 if len(sys.argv) != 5: 
-  print("args: part[0-5] ip:port ip:port_1 ip:port_2")
+  print("args: part ip:port ip:port_1 ip:port_2")
   exit()
 netMe = sys.argv[2].split(':') if ":" in sys.argv[2] else ['localhost', sys.argv[2]]
 netN1 = sys.argv[3].split(':') if ":" in sys.argv[3] else ['localhost', sys.argv[2]]

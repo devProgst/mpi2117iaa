@@ -31,10 +31,12 @@ class NetworkNode:
       size = struct.unpack('I', size_in_4_bytes)
       size = size[0]
       conn.send(b'1')
-      data = zlib.decompress( conn.recv(size) )
-      self.recieved.append( pickle.loads(data) )
+      data = conn.recv(size)
+      data = zlib.decompress(data)
+      data = pickle.loads(data)
+      self.recieved.append(data)
     except Exception as e:
-      print("ERROR while recieving!", e)
+      print("[ERROR] while recieving:", e)
       print("data start: ", data[:16])
     conn.close()
     del self.clients_threads[addr]
@@ -46,17 +48,18 @@ class NetworkNode:
           with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sendSocket:
             sendSocket.connect(dest)
             data = pickle.dumps(dataObject)
+            data = zlib.compress(data)
             size = len(data)
             size_in_4_bytes = struct.pack('I', size)
             sendSocket.send(size_in_4_bytes)
             wait = sendSocket.recv(1)
             if wait == b'1':
-              sendSocket.send(zlib.compress(data))
+              sendSocket.send(data)
               break
             else:
               print("Protocol error.. Retrying sending.")
-        except:
-          print("Error while sending.. Retrying...")
+        except Exception as e:
+          print("[ERROR] while sending:", e)
           time.sleep(2)
 
   def clearRecv(self):

@@ -15,7 +15,9 @@ mod = model.Model(6, netMe[0]+"_"+str(netMe[1]) + "_log")
 print("loading...")
 time.sleep(5)
 
+global_iteration = 1
 while True:
+  print("--- iter", global_iteration, "---")
   mod.setRandomDS() # взять часть датасета
   localGrads = mod.train() # обучить и получить градиенты
   net.sendData( localGrads ) # отправить градиенты клиентам
@@ -25,3 +27,4 @@ while True:
   print("Gradients is okay!")
   mod.aggAndApplyGrads([localGrads] + net.recieved) # применение градиентов
   net.clearRecv() # очистка приемки
+  global_iteration += 1

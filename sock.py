@@ -36,12 +36,11 @@ class NetworkNode:
       while size > 0:
         data = conn.recv(32 + (1024 if (size > 1024) else size))
         if data[:32].decode('utf-8') == hl.md5(data[32:]).hexdigest():
-          data = zlib.decompress(data[32:])
-          dataRecv = pickle.loads(data)
+          dataRecv += data[32:]
           conn.send(b'1')
         else: 
           conn.send(b'0')
-      self.recieved.append(dataRecv)
+      self.recieved.append( pickle.loads( zlib.decompress(dataRecv) ) )
     except Exception as e:
       print("[ERROR] while recieving:", e)
       print("data start: ", data[:16])

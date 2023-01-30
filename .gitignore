@@ -1,6 +1,6 @@
 __pycache__
 tmp
-localhost*
+*.log
 python
 *.zip
-starter.bat
+starter*.bat

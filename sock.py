@@ -3,6 +3,7 @@ import pickle
 import struct
 import time
 import zlib
+import hashlib as hl
 from threading import Thread
 
 class NetworkNode:
@@ -31,33 +32,47 @@ class NetworkNode:
       size = struct.unpack('I', size_in_4_bytes)
       size = size[0]
       conn.send(b'1')
-      data = conn.recv(size)
-      data = zlib.decompress(data)
-      data = pickle.loads(data)
-      self.recieved.append(data)
+      dataRecv = b''
+      while size > 0:
+        data = conn.recv(32 + (1024 if (size > 1024) else size))
+        if data[:32].decode('utf-8') == hl.md5(data[32:]).hexdigest():
+          data = zlib.decompress(data[32:])
+          dataRecv = pickle.loads(data)
+          conn.send(b'1')
+        else: 
+          conn.send(b'0')
+      self.recieved.append(dataRecv)
     except Exception as e:
       print("[ERROR] while recieving:", e)
       print("data start: ", data[:16])
     conn.close()
     del self.clients_threads[addr]
 
+  def chunked(self, size, source):
+    for i in range(0, len(source), size):
+      yield source[i:i+size]
+
   def sendData(self, dataObject):
+    tries = 3
     for dest in self.dest:
       while True:
         try:
           with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sendSocket:
             sendSocket.connect(dest)
-            data = pickle.dumps(dataObject)
-            data = zlib.compress(data)
-            size = len(data)
-            size_in_4_bytes = struct.pack('I', size)
-            sendSocket.send(size_in_4_bytes)
+            data = zlib.compress( pickle.dumps( dataObject ) )
+            size = struct.pack("I", len(data))
+            sendSocket.send(size)
             wait = sendSocket.recv(1)
             if wait == b'1':
-              sendSocket.send(data)
-              break
+              for i in self.chunked(1024, data):
+                while True:
+                  sendSocket.send(hl.md5(i).hexdigest() + i)
+                  if sendSocket.recv(1) == b'1': break
+                  if tries <= 0: return
+                  tries -= 1
+              print("Data sending is OK")
             else:
-              print("Protocol error.. Retrying sending.")
+              print("Protocol error. Try to send again...")
         except Exception as e:
           print("[ERROR] while sending:", e)
           time.sleep(2)

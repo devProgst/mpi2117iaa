@@ -66,7 +66,7 @@ class NetworkNode:
             if wait == b'1':
               for i in self.chunked(1024, data):
                 while True:
-                  sendSocket.send(hl.md5(i).hexdigest() + i)
+                  sendSocket.send(hl.md5(i).hexdigest().encode('utf-8') + i)
                   if sendSocket.recv(1) == b'1': break
                   if tries <= 0: return
                   tries -= 1

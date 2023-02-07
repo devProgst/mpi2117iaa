@@ -56,17 +56,11 @@ class NetworkNode:
       while True:
         try:
           with FTP() as ftp:
-            print("FTP Connecting...")
             ftp.connect(c[0], c[1])
-            print("Try login..")
             ftp.login('user','passwrd')
-            print("Set CWD")
             ftp.cwd('/')
-            print("Sending file...")
             with open(f, "rb") as file:
-              print("Binary:")
               ftp.storbinary(f"STOR {self.generateName(False)}", file)
-            print("OK!")
           break
         except:
           print("Ошибка при попытке передаче данных. Повтор через 3 сек.")

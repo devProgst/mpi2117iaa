@@ -1,0 +1,10 @@
+{
+  "split": 6,
+  "input": 2,
+  "epchg": 3,
+  "node": [ "localhost", 10006 ],
+  "addr": [
+    [ "localhost", 10001 ],
+    [ "localhost", 10002 ]
+  ]
+}

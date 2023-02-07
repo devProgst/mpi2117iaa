@@ -12,18 +12,21 @@ from ftplib import FTP
 
 class MyHandler(FTPHandler):
     def on_file_received(self, fileHandler):
-      for i in NetworkNode.nodes.keys(): 
-        NetworkNode[i].onReceived(str(fileHandler))
+      with open(fileHandler, 'rb') as fh:
+        data = pickle.load(fh)
+      os.remove(fileHandler)
+      for i in NetworkNode.nodes: 
+        i.onReceived(data)
     def on_incomplete_file_received(self, file):
       os.remove(file)
 
 class NetworkNode:
-  nodes = {}
+  nodes = []
 
   def __init__(self, curr, dest):
     self.host = curr[0] 
     self.port = int(curr[1])
-    NetworkNode.nodes[ self.host + ":" + str(self.port) ] = self
+    NetworkNode.nodes.append(self)
     self.dest = list( (i[0], int(i[1])) for i in dest )
     self.serv = Thread(target=self.start_server)
     self.serv.start()
@@ -39,10 +42,8 @@ class NetworkNode:
     server.max_cons_per_ip = 5
     server.serve_forever()
 
-  def onReceived(self, filepath):
-    with open(filepath, 'rb') as f:
-      self.recieved.append( zlib.decompress(pickle.load(f)) )
-    os.remove(filepath)
+  def onReceived(self, data):
+    self.recieved.append(data)
 
   def generateName(self, cur = True):
     return ("send_" if cur else "grad_") + self.host + "_" + str(self.port) + ".bin"
@@ -50,7 +51,7 @@ class NetworkNode:
   def sendData(self, dataObject):
     f = self.generateName()
     with open(f, "wb") as dataFile:
-      dataFile.write( zlib.compress(pickle.dumps(dataObject)) )
+      pickle.dump(dataObject, dataFile)
     for c in self.dest:
       ftp = FTP()
       ftp.connect(c[0], c[1])

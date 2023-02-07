@@ -34,7 +34,7 @@ class NetworkNode:
 
   def start_server(self):
     authorizer = DummyAuthorizer()
-    authorizer.add_user(username='user', password='passwrd', homedir=os.getcwd() perm='elradfmwMT')
+    authorizer.add_user(username='user', password='passwrd', homedir=os.getcwd(), perm='elradfmwMT')
     handler = MyHandler
     handler.authorizer = authorizer
     server = FTPServer((self.host, self.port), handler)

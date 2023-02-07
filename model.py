@@ -1,3 +1,5 @@
+import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import BatchNormalization
 from tensorflow.keras.layers import Conv2D
@@ -10,7 +12,6 @@ from tensorflow.keras.optimizers.legacy import Adam # оптимизатор
 from tensorflow.keras.losses import categorical_crossentropy
 from tensorflow.keras.utils import to_categorical
 from tensorflow.keras.datasets import mnist
-from tensorflow.keras.models import clone_model
 from nodeLogger import *
 import tensorflow as tf
 import numpy as np

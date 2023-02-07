@@ -34,7 +34,7 @@ class NetworkNode:
 
   def start_server(self):
     authorizer = DummyAuthorizer()
-    authorizer.add_anonymous(os.getcwd(), perm='elradfmwMT')
+    authorizer.add_user('user', 'passwrd', perm='elradfmwMT')
     handler = MyHandler
     handler.authorizer = authorizer
     server = FTPServer((self.host, self.port), handler)
@@ -59,7 +59,7 @@ class NetworkNode:
             print("FTP Connecting...")
             ftp.connect(c[0], c[1])
             print("Try login..")
-            ftp.login()
+            ftp.login('user','passwd')
             print("Set CWD")
             ftp.cwd('/')
             print("Sending file...")

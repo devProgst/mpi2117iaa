@@ -4,63 +4,71 @@ import struct
 import time
 import zlib
 from threading import Thread
+import os
+from pyftpdlib.authorizers import DummyAuthorizer
+from pyftpdlib.handlers import FTPHandler
+from pyftpdlib.servers import FTPServer
+from ftplib import FTP
+
+class MyHandler(FTPHandler):
+    def on_file_received(self, fileHandler):
+      for i in NetworkNode.nodes.keys(): 
+        NetworkNode[i].onReceived(str(fileHandler))
+    def on_incomplete_file_received(self, file):
+      os.remove(file)
 
 class NetworkNode:
+  nodes = {}
+
   def __init__(self, curr, dest):
     self.host = curr[0] 
     self.port = int(curr[1])
+    NetworkNode.nodes[ self.host + ":" + str(self.port) ] = self
     self.dest = list( (i[0], int(i[1])) for i in dest )
-    self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    self.sock.bind((self.host, self.port))
-    self.sock.listen()
-    
+    self.serv = Thread(target=self.start_server)
+    self.serv.start()
     self.recieved = []
-    self.clients_threads = {}
-    self.accept_thread = Thread(target=self.onConnection)
-    self.accept_thread.start()
 
-  def onConnection(self):
-    while True:
-      conn, addr = self.sock.accept()
-      self.clients_threads[addr] = Thread(target=self.onReceiving, args=(conn, addr))
-      self.clients_threads[addr].start()
+  def start_server(self):
+    authorizer = DummyAuthorizer()
+    authorizer.add_anonymous(os.getcwd(), perm='elradfmwMT')
+    handler = MyHandler
+    handler.authorizer = authorizer
+    server = FTPServer((self.host, self.port), handler)
+    server.max_cons = 2
+    server.max_cons_per_ip = 5
+    server.serve_forever()
 
-  def onReceiving(self, conn, addr):
-    try:
-      size_in_4_bytes = conn.recv(4)
-      size = struct.unpack('I', size_in_4_bytes)
-      size = size[0]
-      conn.send(b'1')
-      data = zlib.decompress( conn.recv(size) )
-      self.recieved.append( pickle.loads(data) )
-    except Exception as e:
-      print("ERROR while recieving!", e)
-      print("data start: ", data[:16])
-    conn.close()
-    del self.clients_threads[addr]
+  def onReceived(self, filepath):
+    with open(filepath, 'rb') as f:
+      self.recieved.append( zlib.decompress(pickle.load(f)) )
+    os.remove(filepath)
+
+  def generateName(self, cur = True):
+    return ("send_" if cur else "grad_") + self.host + "_" + str(self.port) + ".bin"
 
   def sendData(self, dataObject):
-    for dest in self.dest:
-      while True:
-        try:
-          with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sendSocket:
-            sendSocket.connect(dest)
-            data = pickle.dumps(dataObject)
-            size = len(data)
-            size_in_4_bytes = struct.pack('I', size)
-            sendSocket.send(size_in_4_bytes)
-            wait = sendSocket.recv(1)
-            if wait == b'1':
-              sendSocket.send(zlib.compress(data))
-              break
-            else:
-              print("Protocol error.. Retrying sending.")
-        except:
-          print("Error while sending.. Retrying...")
-          time.sleep(2)
+    f = self.generateName()
+    with open(f, "wb") as dataFile:
+      dataFile.write( zlib.compress(pickle.dumps(dataObject)) )
+    for c in self.dest:
+      ftp = FTP()
+      ftp.connect(c[0], c[1])
+      ftp.login()
+      ftp.cwd('/')
+      with open(f, "rb") as file:
+        ftp.storbinary(f"STOR {self.generateName(False)}", file)
+      ftp.close()
+    os.remove('./' + f)
 
   def waitGrads(self, count):
     return True if len(self.recieved) != count else False
 
   def clearRecv(self):
     self.recieved = []
+
+if __name__ == "__main__":
+  a = NetworkNode( ('127.0.0.1', 12401), [ ['127.0.0.1', 12000] ])
+  time.sleep(2)
+  data = {'test': 1}
+  a.sendData( data )

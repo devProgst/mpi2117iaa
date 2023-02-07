@@ -15,8 +15,6 @@ from nodeLogger import *
 import tensorflow as tf
 import numpy as np
 import time
-import pickle
-import copy
 
 class Model:
 	def __init__(self, dsSplit = 6, modelName="default_model.log", init_lr=1e-4):

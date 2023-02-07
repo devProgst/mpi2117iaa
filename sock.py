@@ -53,13 +53,19 @@ class NetworkNode:
     with open(f, "wb") as dataFile:
       pickle.dump(dataObject, dataFile)
     for c in self.dest:
-      ftp = FTP()
-      ftp.connect(c[0], c[1])
-      ftp.login()
-      ftp.cwd('/')
-      with open(f, "rb") as file:
-        ftp.storbinary(f"STOR {self.generateName(False)}", file)
-      ftp.close()
+      while True:
+        try:
+          ftp = FTP()
+          ftp.connect(c[0], c[1])
+          ftp.login()
+          ftp.cwd('/')
+          with open(f, "rb") as file:
+            ftp.storbinary(f"STOR {self.generateName(False)}", file)
+          ftp.close()
+          break
+        except:
+          print("Ошибка при попытке передаче данных. Повтор через 3 сек.")
+          time.sleep(3)
     os.remove('./' + f)
 
   def waitGrads(self, count):

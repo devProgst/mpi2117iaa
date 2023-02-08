@@ -1,10 +1,7 @@
-import socket
-import pickle
-import struct
-import time
-import zlib
-from threading import Thread
 import os
+import pickle
+import time
+from threading import Thread
 from pyftpdlib.authorizers import DummyAuthorizer
 from pyftpdlib.handlers import FTPHandler
 from pyftpdlib.servers import FTPServer
@@ -72,9 +69,3 @@ class NetworkNode:
 
   def clearRecv(self):
     self.recieved = []
-
-if __name__ == "__main__":
-  a = NetworkNode( ('127.0.0.1', 12401), [ ['127.0.0.1', 12000] ])
-  time.sleep(2)
-  data = {'test': 1}
-  a.sendData( data )

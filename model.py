@@ -156,8 +156,8 @@ class Model:
 		self.model.set_weights(w0)
 
 if __name__ == "__main__":
-	m = Model(20, "self_model.log")
-	g1 = m.train(epochs = 1)
-	g2 = m.train(epochs = 1)
+	m = Model(20, "test_model.log")
+	g1 = m.train(epochs = 3)
+	g2 = m.train(epochs = 3)
 	m.applyAggGrads([ g1, g2 ], [ 1, 0.25 ])
 	m.checkAccuracy()
